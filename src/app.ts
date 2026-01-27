@@ -33,10 +33,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'Achievement Service API Docs',
-}));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Achievement Service API Docs',
+  })
+);
 
 // Routes
 import achievementRoutes from './routes/achievement.routes';
@@ -69,12 +73,14 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // Error handling
-app.use((err: Error & { statusCode?: number }, req: Request, res: Response, _next: NextFunction) => {
-  logger.error(err.stack);
-  const status = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
-  sendError(res, status, message);
-});
+app.use(
+  (err: Error & { statusCode?: number }, req: Request, res: Response, _next: NextFunction) => {
+    logger.error(err.stack);
+    const status = err.statusCode || 500;
+    const message = err.message || 'Internal Server Error';
+    sendError(res, status, message);
+  }
+);
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(port, () => {
