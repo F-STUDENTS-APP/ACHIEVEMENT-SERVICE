@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Achievement {
+  id                    String              @id @default(uuid())
+  
+  // Student Information
+  studentId             String
+  studentNisn           String
+  studentName           String
+  studentClass          String
+  
+  // Reporter Information
+  reportedBy            String              // User ID
+  reportedByName        String
+  reporterRole          String              // WALIKELAS, GURUMAPEL, BK
+  
+  // Category Information
+  categoryId            String
+  categoryCode          String
+  categoryName          String
+  categoryType          AchievementType
+  
+  // Achievement Details
+  title                 String
+  description           String              @db.Text
+  achievementDate       DateTime
+  location              String?
+  organizer             String?
+  
+  // Level & Ranking
+  level                 AchievementLevel
+  rank                  AchievementRank?
+  
+  // Team/Individual
+  isTeamAchievement     Boolean             @default(false)
+  teamName              String?
+  teamMembers           Json?               // Array of student IDs/names
+  studentRole           String?             // Captain, Member, Coach
+  
+  // Points
+  points                Int
+  basePoints            Int                 // Base points from category
+  levelMultiplier       Float               @default(1.0)
+  rankMultiplier        Float               @default(1.0)
+  
+  // Evidence
+  certificateUrl        String?
+  evidenceUrls          Json?               // Array of URLs
+  photoUrls             Json?
+  
+  // Status & Workflow
+  status                AchievementStatus   @default(PENDING)
+  
+  // BK Approval
+  approvedAt            DateTime?
+  approvedBy            String?             // User ID
+  approvedByName        String?
+  bkNotes               String?             @db.Text
+  
+  // Rejection
+  rejectedAt            DateTime?
+  rejectedBy            String?             // User ID
+  rejectedByName        String?
+  rejectionReason       String?             @db.Text
+  
+  // Recognition
+  isPublished           Boolean             @default(false)
+  publishedAt           DateTime?
+  isFeatured            Boolean             @default(false)
+  featuredUntil         DateTime?
+  
+  // Academic Period
+  academicYear          String
+  semester              Int                 // 1 or 2
+  
+  // Meta
+  notificationSent      Boolean             @default(false)
+  notificationSentAt    DateTime?
+  viewCount             Int                 @default(0)
+  isActive              Boolean             @default(true)
+  createdBy             String
+  createdAt             DateTime            @default(now())
+  updatedBy         String?
+  updatedAt             DateTime            @updatedAt
+  deletedAt             DateTime?
+  deletedBy             String?
+  
+  // Relations
+  approvalHistory       AchievementApprovalHistory[]
+  
+  @@index([studentId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([achievementDate])
+  @@index([academicYear])
+  @@index([level])
+  @@index([reportedBy])
+  @@map("achievements")
+}
+
+model AchievementApprovalHistory {
+  id              String      @id @default(uuid())
+  achievementId   String
+  
+  action          ApprovalAction
+  fromStatus      AchievementStatus
+  toStatus        AchievementStatus
+  
+  approverUserId  String
+  approverName    String
+  approverRole    String
+  
+  notes           String?     @db.Text
+  actionDate      DateTime    @default(now())
+  
+  achievement     Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  @@index([achievementId])
+  @@index([actionDate])
+  @@map("achievement_approval_history")
+}
+
+model AchievementStatistics {
+  id                  String    @id @default(uuid())
+  studentId           String
+  studentName         String
+  classId             String
+  className           String
+  
+  // Counts
+  totalAchievements   Int       @default(0)
+  pendingCount        Int       @default(0)
+  approvedCount     Int       @default(0)
+  rejectedCount     Int       @default(0)
+  
+  // Points
+  totalPoints         Int       @default(0)
+  
+  // By Type
+  academicCount       Int       @default(0)
+  nonAcademicCount    Int       @default(0)
+  sportsCount         Int       @default(0)
+  artsCount           Int       @default(0)
+  scienceCount        Int       @default(0)
+  technologyCount     Int       @default(0)
+  
+  // By Level
+  schoolCount         Int       @default(0)
+  districtCount       Int       @default(0)
+  regencyCount        Int       @default(0)
+  provinceCount       Int       @default(0)
+  nationalCount       Int       @default(0)
+  internationalCount  Int       @default(0)
+  
+  // By Rank
+  firstPlaceCount     Int       @default(0)
+  secondPlaceCount    Int       @default(0)
+  thirdPlaceCount     Int       @default(0)
+  
+  // Flags
+  isTopAchiever       Boolean   @default(false)
+  lastAchievementDate DateTime?
+  
+  // Period
+  academicYear        String
+  semester            Int
+  
+  updatedAt           DateTime  @updatedAt
+  
+  @@unique([studentId, academicYear, semester])
+  @@index([studentId])
+  @@index([academicYear])
+  @@map("achievement_statistics")
+}
+
+model HallOfFame {
+  id              String    @id @default(uuid())
+  studentId       String
+  studentName     String
+  studentClass    String
+  achievementId   String
+  achievementTitle String
+  level           AchievementLevel
+  rank            AchievementRank
+  achievementDate DateTime
+  photoUrl        String?
+  academicYear    String
+  displayOrder    Int       @default(0)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  
+  @@index([academicYear])
+  @@index([level])
+  @@map("hall_of_fame")
+}
+
+enum AchievementStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AchievementType {
+  ACADEMIC            // Olimpiade, Lomba Akademik
+  NON_ACADEMIC        // General
+  SPORTS              // Olahraga
+  ARTS                // Seni & Budaya
+  SCIENCE             // Sains & Penelitian
+  TECHNOLOGY          // IT, Robotik
+  LANGUAGE            // Bahasa
+  RELIGIOUS           // Keagamaan
+  SOCIAL              // Sosial, Kepemimpinan
+  OTHER
+}
+
+enum AchievementLevel {
+  SEKOLAH             // School level
+  KECAMATAN           // District level
+  KABUPATEN           // Regency level
+  PROVINSI            // Province level
+  NASIONAL            // National level
+  INTERNASIONAL       // International level
+}
+
+enum AchievementRank {
+  JUARA_1             // 1st place
+  JUARA_2             // 2nd place
+  JUARA_3             // 3rd place
+  HARAPAN_1           // 1st runner up
+  HARAPAN_2           // 2nd runner up
+  HARAPAN_3           // 3rd runner up
+  FINALIS             // Finalist
+  PESERTA             // Participant
+  LULUS_SELEKSI       // Passed selection
+}
+
+enum ApprovalAction {
+  SUBMIT
+  APPROVE
+  REJECT
+  UPDATE
+  DELETE
+  PUBLISH
+  FEATURE
+}
