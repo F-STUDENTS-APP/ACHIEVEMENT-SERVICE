@@ -15,7 +15,12 @@ const app = express();
 const port = process.env.PORT || 3005;
 
 // Middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(
   cors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
@@ -33,14 +38,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Swagger Documentation
-app.use(
-  '/api-docs',
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Achievement Service API Docs',
-  })
-);
+const swaggerOptions = {
+  customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css',
+  customJs: [
+    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-bundle.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-standalone-preset.min.js',
+  ],
+  customSiteTitle: 'Achievement Service API Docs',
+};
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOptions));
 
 // Routes
 import achievementRoutes from './routes/achievement.routes';
