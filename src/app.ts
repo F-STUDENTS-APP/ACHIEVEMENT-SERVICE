@@ -6,8 +6,9 @@ import 'express-async-errors';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import logger from './config/logger';
-import { sendError } from './utils/response';
 import { swaggerSpec } from './config/swagger';
+import { errorHandler } from '@common/middlewares/error.handler';
+import { healthCheck } from '@common/utils/health';
 
 dotenv.config();
 
@@ -51,43 +52,12 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOption
 
 // Routes
 import achievementRoutes from './routes/achievement.routes';
-
 app.use('/api/v1/achievements', achievementRoutes);
 
-/**
- * @swagger
- * /health:
- *   get:
- *     summary: Health check endpoint
- *     tags: [Health]
- *     responses:
- *       200:
- *         description: Service is healthy
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: OK
- *                 service:
- *                   type: string
- *                   example: achievement-service
- */
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'OK', service: 'achievement-service' });
-});
+app.get('/health', healthCheck('achievement-service'));
 
 // Error handling
-app.use(
-  (err: Error & { statusCode?: number }, req: Request, res: Response, _next: NextFunction) => {
-    logger.error(err.stack);
-    const status = err.statusCode || 500;
-    const message = err.message || 'Internal Server Error';
-    sendError(res, status, message);
-  }
-);
+app.use(errorHandler);
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(port, () => {
