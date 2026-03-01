@@ -16,15 +16,11 @@
         "paths": {
             "@/*": [
                 "src/*"
-            ],
-            "@common/*": [
-                "../common/*"
             ]
         }
     },
     "include": [
-        "src/**/*",
-        "../common/**/*"
+        "src/**/*"
     ],
     "exclude": [
         "node_modules",
